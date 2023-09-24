@@ -1,14 +1,5 @@
 import React, { useState, useEffect } from "react";
-import {
-  copy,
-  download,
-  loader,
-  tick,
-  defaultImage,
-  result,
-  curious,
-  search,
-} from "../assets";
+import { copy, loader, tick, defaultImage, curious, search } from "../assets";
 import { useLazyGetFactsQuery } from "../services/facts";
 import { useGenerateImageMutation } from "../services/image";
 import toast from "react-hot-toast";
@@ -23,7 +14,7 @@ const Output = () => {
   const [allFacts, setAllFacts] = useState([]);
   const [copied, setCopied] = useState("");
   const [getFacts, { error, isFetching }] = useLazyGetFactsQuery();
-  const [generateImage, { imageError, isImageFetching }] =
+  const [generateImage, { error: imageError, isLoading }] =
     useGenerateImageMutation();
 
   useEffect(() => {
@@ -33,6 +24,10 @@ const Output = () => {
       setAllFacts(factsFromLocalStorage);
     }
   }, []);
+
+  useEffect(() => {
+    console.log(isFetching, isLoading);
+  }, [isFetching, isLoading]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -157,7 +152,7 @@ const Output = () => {
                     className="w-full h-full object-cover rounded-md"
                   />
                 </div>
-                <div
+                {/* <div
                   className="copy_btn"
                   onClick={() => downloadImage(item.image, item.prompt)}
                 >
@@ -166,7 +161,7 @@ const Output = () => {
                     alt="Download Icon"
                     className="w-[40%] h-[40%] object-contain"
                   />
-                </div>
+                </div> */}
                 <span className="font-semibold">Facts:</span>{" "}
                 {`${item.facts[0].substring(0, 50)}...`}
               </div>
@@ -182,18 +177,6 @@ const Output = () => {
         </div>
       </div>
       <div className="my-10 max-w-full flex justify-center items-center">
-        {/* {isFetching ? (
-          <img src={loader} alt="Loader" className="w-20 h-20 object-contain" />
-        ) : error ? (
-          <p className="font-inter font-bold text-black text-center">
-            Well that wasn't supposed to happen...
-            <br />
-            <span className="font-satoshi font-normal text-gray-700">
-              {error?.data?.error}
-            </span>
-          </p>
-        ) : ( */}
-        {/* fact.result && ( */}
         <div className="flex flex-col gap-3 w-full">
           <h2 className="font-satoshi font-bold text-gray-600 text-xl">
             {allFacts.length == 0 || fact.facts.length == 0
@@ -202,7 +185,7 @@ const Output = () => {
             <span className="blue_gradient"></span>
           </h2>
           <div className="result_box">
-            {isFetching || isImageFetching ? (
+            {isFetching || isLoading ? (
               <div className="w-full aspect-square flex justify-center items-center">
                 <img
                   src={loader}
@@ -243,8 +226,6 @@ const Output = () => {
             )}
           </div>
         </div>
-        {/* ) */}
-        {/* )} */}
       </div>
     </section>
   );

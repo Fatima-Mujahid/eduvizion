@@ -34,7 +34,7 @@ const Hero = () => {
         <span className="orange_gradient">&nbsp;Visuals</span>
       </h1>
       <h2 className="desc">
-        Enter a topic or keyword that piques your curiosity, and we'll uncover 5
+        Enter a topic or keyword that piques your curiosity, and we'll uncover
         fascinating facts and a captivating image to expand your knowledge and
         entertain your imagination!
       </h2>
