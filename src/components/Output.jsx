@@ -113,7 +113,7 @@ const Output = () => {
             className="absolute left-0 my-2 ml-3 w-5"
           />
           <input
-            placeholder="Explore the Unknown!"
+            placeholder="Try searching for The Milky Way!"
             value={fact.prompt}
             onChange={(e) => {
               setFact({ ...fact, prompt: e.target.value });
