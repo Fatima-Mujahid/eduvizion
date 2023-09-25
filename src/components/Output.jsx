@@ -8,8 +8,7 @@ const Output = () => {
   const [fact, setFact] = useState({
     prompt: "",
     facts: [],
-    image:
-      "https://cdn.britannica.com/49/179449-138-9F4EC401/Overview-Berlin.jpg?w=800&h=450&c=crop",
+    image: "",
   });
   const [allFacts, setAllFacts] = useState([]);
   const [copied, setCopied] = useState("");
@@ -24,10 +23,6 @@ const Output = () => {
       setAllFacts(factsFromLocalStorage);
     }
   }, []);
-
-  useEffect(() => {
-    console.log(isFetching, isLoading);
-  }, [isFetching, isLoading]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
