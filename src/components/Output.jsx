@@ -106,7 +106,6 @@ const Output = () => {
       link.click();
       toast.success("Image downloaded successfully!");
     } catch (error) {
-      console.error("Error:", error);
       toast.error("Error. Oops, that's unexpected!");
     }
   };
