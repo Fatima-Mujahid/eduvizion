@@ -167,7 +167,7 @@ const Output = () => {
                   <img
                     src={download}
                     alt="Download Icon"
-                    className="w-[40%] h-[40%] object-contain"
+                    className="w-[50%] h-[50%] object-contain"
                   />
                 </div>
                 <span className="font-semibold">Facts:</span>{" "}
@@ -177,7 +177,7 @@ const Output = () => {
                 <img
                   src={copied === item.facts ? tick : copy}
                   alt="Copy Icon"
-                  className="w-[40%] h-[40%] object-contain"
+                  className="w-[50%] h-[50%] object-contain"
                 />
               </div>
             </div>
