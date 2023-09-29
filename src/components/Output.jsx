@@ -1,20 +1,29 @@
 import React, { useState, useEffect } from "react";
-import { copy, loader, tick, defaultImage, curious, search } from "../assets";
+import {
+  copy,
+  loader,
+  tick,
+  defaultImage,
+  curious,
+  download,
+  search,
+} from "../assets";
 import { useLazyGetFactsQuery } from "../services/facts";
-import { useGenerateImageMutation } from "../services/image";
 import toast from "react-hot-toast";
+
+const huggingFaceToken = import.meta.env.VITE_HUGGING_FACE_TOKEN;
 
 const Output = () => {
   const [fact, setFact] = useState({
     prompt: "",
     facts: [],
-    image: "",
+    image: null,
   });
   const [allFacts, setAllFacts] = useState([]);
   const [copied, setCopied] = useState("");
   const [getFacts, { error, isFetching }] = useLazyGetFactsQuery();
-  const [generateImage, { error: imageError, isLoading }] =
-    useGenerateImageMutation();
+  const [imageError, setImageError] = useState(null);
+  const [imageLoading, setImageLoading] = useState(false);
 
   useEffect(() => {
     const factsFromLocalStorage = JSON.parse(localStorage.getItem("facts"));
@@ -24,6 +33,32 @@ const Output = () => {
     }
   }, []);
 
+  const generateImage = async (data) => {
+    const response = await fetch(
+      "https://api-inference.huggingface.co/models/runwayml/stable-diffusion-v1-5",
+      {
+        headers: {
+          Authorization: `Bearer ${huggingFaceToken}`,
+        },
+        method: "POST",
+        body: JSON.stringify(data),
+      }
+    );
+    const result = await response.blob();
+    return result;
+  };
+
+  const blobToBase64 = (blob) => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        resolve(reader.result.split(",")[1]);
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
+    });
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -32,37 +67,26 @@ const Output = () => {
     });
 
     if (data?.facts) {
-      const response = await generateImage({
-        prompt: `${fact.prompt}, masterpiece, hyper detail, symmetrical balance, in-frame, RAW photo, (high detailed skin:1.2), 8k uhd, dslr, soft lighting, high quality, film grain, Fujifilm XT3`,
-        negative_prompt:
-          "(deformed iris, deformed pupils, semi-realistic, cgi, 3d, render, sketch, cartoon, drawing, anime:1.4), text, close up, cropped, out of frame, worst quality, low quality, jpeg artifacts, ugly, duplicate, morbid, mutilated, extra fingers, mutated hands, poorly drawn hands, poorly drawn face, mutation, deformed, blurry, dehydrated, bad anatomy, bad proportions, extra limbs, cloned face, disfigured, gross proportions, malformed limbs, missing arms, missing legs, extra arms, extra legs, fused fingers, too many fingers, long neck",
-        width: "512",
-        height: "512",
-        samples: "1",
-        num_inference_steps: "50",
-        seed: null,
-        guidance_scale: 7,
-        safety_checker: "yes",
-        multi_lingual: "no",
-        panorama: "no",
-        self_attention: "no",
-        upscale: "no",
-        embeddings_model: null,
-        webhook: null,
-        track_id: null,
-      });
-      if (response?.data?.output[0]) {
-        const newFact = {
-          ...fact,
-          facts: data.facts,
-          image: response?.data?.output[0],
-        };
-        const updatedAllFacts = [newFact, ...allFacts];
+      setImageLoading(true);
+      try {
+        const response = await generateImage({ inputs: fact.prompt });
+        const imageBase64 = await blobToBase64(response);
 
-        setFact(newFact);
-        setAllFacts(updatedAllFacts);
+        if (response) {
+          const newFact = {
+            ...fact,
+            facts: data.facts,
+            image: imageBase64,
+          };
+          const updatedAllFacts = [newFact, ...allFacts];
 
-        localStorage.setItem("facts", JSON.stringify(updatedAllFacts));
+          setFact(newFact);
+          setImageLoading(false);
+          setAllFacts(updatedAllFacts);
+          localStorage.setItem("facts", JSON.stringify(updatedAllFacts));
+        }
+      } catch (error) {
+        setImageError(error);
       }
     }
   };
@@ -76,20 +100,10 @@ const Output = () => {
 
   const downloadImage = async (image, prompt) => {
     try {
-      const response = await fetch(image);
-      if (!response.ok) {
-        throw new Error("Image download failed");
-      }
-      const blob = await response.blob();
-      const blobUrl = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = blobUrl;
-      a.download = `${prompt}.jpg`;
-      a.style.display = "none";
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(blobUrl);
+      const link = document.createElement("a");
+      link.href = `data:image/png;base64,${image}`;
+      link.download = prompt;
+      link.click();
       toast.success("Image downloaded successfully!");
     } catch (error) {
       console.error("Error:", error);
@@ -142,12 +156,12 @@ const Output = () => {
               <div className="flex gap-3 items-center">
                 <div key={index} className="image_card">
                   <img
-                    src={item.image}
+                    src={`data:image/png;base64,${item.image}`}
                     alt={item.prompt}
                     className="w-full h-full object-cover rounded-md"
                   />
                 </div>
-                {/* <div
+                <div
                   className="copy_btn"
                   onClick={() => downloadImage(item.image, item.prompt)}
                 >
@@ -156,7 +170,7 @@ const Output = () => {
                     alt="Download Icon"
                     className="w-[40%] h-[40%] object-contain"
                   />
-                </div> */}
+                </div>
                 <span className="font-semibold">Facts:</span>{" "}
                 {`${item.facts[0].substring(0, 50)}...`}
               </div>
@@ -180,7 +194,7 @@ const Output = () => {
             <span className="blue_gradient"></span>
           </h2>
           <div className="result_box">
-            {isFetching || isLoading ? (
+            {isFetching || imageLoading ? (
               <div className="w-full aspect-square flex justify-center items-center">
                 <img
                   src={loader}
@@ -193,11 +207,6 @@ const Output = () => {
                 <p className="font-inter font-bold text-black text-center">
                   Oops, that's unexpected! Give it another shot, and let's see
                   if the digital dice roll in your favor this time!
-                  <br />
-                  <span className="font-satoshi font-normal text-gray-700">
-                    {(error && error?.data?.error) ||
-                      (imageError && imageError?.data?.error)}
-                  </span>
                 </p>
               </div>
             ) : (
@@ -211,7 +220,11 @@ const Output = () => {
                   ))}
                 </ol>
                 <img
-                  src={fact.facts?.length ? fact.image : defaultImage}
+                  src={
+                    fact.facts?.length
+                      ? `data:image/png;base64,${fact.image}`
+                      : defaultImage
+                  }
                   alt={fact.prompt}
                   className={`${
                     fact.facts?.length ? "mt-[24px]" : ""
