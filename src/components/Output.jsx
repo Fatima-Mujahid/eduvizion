@@ -26,7 +26,7 @@ const Output = () => {
   const [imageLoading, setImageLoading] = useState(false);
 
   useEffect(() => {
-    const factsFromLocalStorage = JSON.parse(localStorage.getItem("facts"));
+    const factsFromLocalStorage = JSON.parse(localStorage.getItem("myfacts"));
 
     if (factsFromLocalStorage) {
       setAllFacts(factsFromLocalStorage);
@@ -83,7 +83,7 @@ const Output = () => {
           setFact(newFact);
           setImageLoading(false);
           setAllFacts(updatedAllFacts);
-          localStorage.setItem("facts", JSON.stringify(updatedAllFacts));
+          localStorage.setItem("myfacts", JSON.stringify(updatedAllFacts));
         }
       } catch (error) {
         setImageError(error);
