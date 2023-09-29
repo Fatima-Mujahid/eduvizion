@@ -8,7 +8,7 @@ import {
   download,
   search,
 } from "../assets";
-import { useLazyGetFactsQuery } from "../services/facts";
+import { useGetFactsMutation } from "../services/facts";
 import toast from "react-hot-toast";
 
 const huggingFaceToken = import.meta.env.VITE_HUGGING_FACE_TOKEN;
@@ -21,9 +21,9 @@ const Output = () => {
   });
   const [allFacts, setAllFacts] = useState([]);
   const [copied, setCopied] = useState("");
-  const [getFacts, { error, isFetching }] = useLazyGetFactsQuery();
-  const [imageError, setImageError] = useState(null);
+  const [getFacts, { error, isLoading }] = useGetFactsMutation();
   const [imageLoading, setImageLoading] = useState(false);
+  const [imageError, setImageError] = useState(null);
 
   useEffect(() => {
     const factsFromLocalStorage = JSON.parse(localStorage.getItem("myfacts"));
@@ -63,31 +63,34 @@ const Output = () => {
     e.preventDefault();
 
     const { data } = await getFacts({
-      prompt: fact.prompt,
+      messages: [
+        {
+          role: "user",
+          content: `Give 5 interesting / fascinating / mind blowing / fun facts about ${fact.prompt} [max 100 words]. Please give an array of facts in this format strictly: ["...", "...", "...", "...", "..."]`,
+        },
+      ],
     });
 
-    if (data?.facts) {
-      setImageLoading(true);
-      try {
-        const response = await generateImage({ inputs: fact.prompt });
-        const imageBase64 = await blobToBase64(response);
+    setImageLoading(true);
+    try {
+      const response = await generateImage({ inputs: fact.prompt });
+      const imageBase64 = await blobToBase64(response);
 
-        if (response) {
-          const newFact = {
-            ...fact,
-            facts: data.facts,
-            image: imageBase64,
-          };
-          const updatedAllFacts = [newFact, ...allFacts];
+      if (data?.choices[0]?.message && response) {
+        const newFact = {
+          ...fact,
+          facts: JSON.parse(data.choices[0].message.content),
+          image: imageBase64,
+        };
+        const updatedAllFacts = [newFact, ...allFacts];
 
-          setFact(newFact);
-          setImageLoading(false);
-          setAllFacts(updatedAllFacts);
-          localStorage.setItem("myfacts", JSON.stringify(updatedAllFacts));
-        }
-      } catch (error) {
-        setImageError(error);
+        setFact(newFact);
+        setImageLoading(false);
+        setAllFacts(updatedAllFacts);
+        localStorage.setItem("myfacts", JSON.stringify(updatedAllFacts));
       }
+    } catch (error) {
+      setImageError(error);
     }
   };
 
@@ -193,7 +196,7 @@ const Output = () => {
             <span className="blue_gradient"></span>
           </h2>
           <div className="result_box">
-            {isFetching || imageLoading ? (
+            {isLoading || imageLoading ? (
               <div className="w-full aspect-square flex justify-center items-center">
                 <img
                   src={loader}

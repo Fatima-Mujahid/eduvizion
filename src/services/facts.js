@@ -1,24 +1,40 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 
-const rapidApiKey = import.meta.env.VITE_RAPID_API_FACTS_KEY;
 const openAiKey = import.meta.env.VITE_OPEN_AI_API_KEY;
 
 export const factsApi = createApi({
   reducerPath: "factsApi",
   baseQuery: fetchBaseQuery({
-    baseUrl: "https://interesting-facts-api.p.rapidapi.com/",
+    baseUrl: "https://api.openai.com/v1/chat/completions",
     prepareHeaders: (headers) => {
-      headers.set("X-RapidAPI-Key", rapidApiKey);
-      headers.set("X-RapidAPI-Host", "interesting-facts-api.p.rapidapi.com");
+      headers.set("Authorization", `Bearer ${openAiKey}`);
+      headers.set("Content-Type", "application/json");
       return headers;
     },
   }),
   endpoints: (builder) => ({
-    getFacts: builder.query({
-      query: (params) =>
-        `/api/${openAiKey}/${encodeURIComponent(params.prompt)}`,
+    getFacts: builder.mutation({
+      query: (data) => ({
+        method: "POST",
+        body: {
+          model: 'gpt-3.5-turbo',
+          messages: data.messages,
+        },
+      }),
     }),
   }),
 });
 
-export const { useLazyGetFactsQuery } = factsApi;
+export const { useGetFactsMutation } = factsApi;
+
+
+
+
+
+
+
+
+// return response.data.choices[0].message;
+// } catch (e: any) {
+//   console.log(e)
+//   throw new Error(e);
